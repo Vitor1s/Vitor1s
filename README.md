@@ -1,9 +1,9 @@
 <div align="center">
 
-[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=1000&color=58A6FF&center=true&vCenter=true&width=700&lines=Ol%C3%A1%2C+eu+sou+Vitor+Severo;Backend+%2F+Full+Stack+Developer;Golang+%E2%80%A2+Java+%E2%80%A2+React;Microsservi%C3%A7os+%E2%80%A2+APIs+%E2%80%A2+Docker)](https://github.com/Vitor1s)
+[![Typing SVG](https://readme-typing-svg.demolab.com?font=Fira+Code&weight=600&size=28&duration=3000&pause=1000&color=58A6FF&center=true&vCenter=true&width=700&lines=Ol%C3%A1%2C+eu+sou+Vitor+Severo;Backend+%2F+Full+Stack+Developer;APIs+REST+%E2%80%A2+gRPC+%E2%80%A2+Microsservi%C3%A7os;Explorando+IA+%26+Engenharia+de+Prompt)](https://github.com/Vitor1s)
 
 **Desenvolvedor Backend / Full Stack** · São José dos Campos, SP  
-Golang · Java · React/Next.js · gRPC · Microsserviços · Docker
+Golang · Java · React/Next.js · APIs REST · gRPC · Microsserviços · IA aplicada
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Vitor_Severo-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/vitor-severo-dev)
 [![Gmail](https://img.shields.io/badge/Email-vitors.severo%40hotmail.com-EA4335?style=for-the-badge&logo=gmail&logoColor=white)](mailto:vitors.severo@hotmail.com)
@@ -15,25 +15,18 @@ Golang · Java · React/Next.js · gRPC · Microsserviços · Docker
 
 ### Sobre mim
 
-Desenvolvedor com experiência em aplicações web em produção — APIs, microsserviços e interfaces modernas. Atuei em telecomunicações, sistemas corporativos B2B e plataformas educacionais, sempre com foco em performance, estabilidade e entrega.
+Desenvolvedor Backend / Full Stack com experiência em aplicações web, **APIs REST**, gRPC, microsserviços e interfaces modernas. Gosto de construir soluções que equilibram qualidade técnica, performance e entrega — do design de endpoints à integração entre sistemas e produto.
 
-Hoje me aprofundo em **Engenharia de Software orientada a Java** (pós-graduação) e uso IA no dia a dia (Cursor, Copilot, Claude) para acelerar análise de código, refatoração e documentação.
+Além do desenvolvimento tradicional, estou me atualizando com o que o mercado mais exige hoje: **inteligência artificial aplicada à engenharia de software**. Estudo **engenharia de prompt**, fundamentos de **engenharia de IA**, uso de agentes e LLMs no fluxo de desenvolvimento, e como integrar IA em produtos e processos (automação, análise de código, documentação e produtividade).
 
-- 🔭 Foco atual: **Backend com Golang/Java**, integrações e arquitetura de microsserviços  
-- 🌱 Estudando: Spring Boot, arquitetura de software e práticas de engenharia  
-- 💬 Aberto a: oportunidades **Backend** ou **Full Stack** (presencial, híbrido ou remoto)  
-- ⚡ Diferencial: resultados mensuráveis em produção + inglês avançado
+No dia a dia uso ferramentas como **Cursor, Copilot e Claude** para acelerar refatoração, debug e escrita técnica — sempre com critério de engenharia, não só “gerar código”.
 
----
+Também curso **pós-graduação em Engenharia de Software** e continuo aprofundando backend (Golang/Java), APIs REST, arquitetura e boas práticas.
 
-### O que já entreguei
-
-| Impacto | Contexto |
-|--------|----------|
-| **-30%** tempo de deploy e quedas pós-release | CI/CD + Docker na iez! telecom |
-| **+25%** performance em queries críticas | Refatoração de serviços Golang de alta demanda |
-| **-20%** MTTR em apps corporativos B2B | Correções full stack (Java, React, APIs) |
-| **Auth centralizada** com Keycloak + Envoy | Microsserviços distribuídos em produção |
+- 🔭 Foco: **Backend / Full Stack**, APIs REST/gRPC e workflows com IA  
+- 🌱 Estudando: engenharia de prompt, engenharia de IA, LLMs, agentes e arquitetura de software  
+- 💬 Aberto a: oportunidades **Backend**, **Full Stack** ou projetos com **IA** (presencial, híbrido ou remoto)  
+- ⚡ Inglês avançado — documentação, escrita profissional e entrevistas técnicas
 
 ---
 
@@ -52,6 +45,7 @@ Hoje me aprofundo em **Engenharia de Software orientada a Java** (pós-graduaç�
 [![Skills](https://skillicons.dev/icons?i=docker,kubernetes,linux,nginx,aws,git,github,vscode,postman,bash)](https://skillicons.dev)
 
 <p>
+  <img src="https://img.shields.io/badge/REST_API-009688?style=flat-square&logo=fastapi&logoColor=white" alt="REST API"/>
   <img src="https://img.shields.io/badge/gRPC-244c5a?style=flat-square&logo=grpc&logoColor=white" alt="gRPC"/>
   <img src="https://img.shields.io/badge/Keycloak-4D4D4D?style=flat-square&logo=keycloak&logoColor=white" alt="Keycloak"/>
   <img src="https://img.shields.io/badge/Envoy-AC6199?style=flat-square&logo=envoyproxy&logoColor=white" alt="Envoy"/>
@@ -59,19 +53,6 @@ Hoje me aprofundo em **Engenharia de Software orientada a Java** (pós-graduaç�
   <img src="https://img.shields.io/badge/CI%2FCD-2088FF?style=flat-square&logo=githubactions&logoColor=white" alt="CI/CD"/>
   <img src="https://img.shields.io/badge/Tailwind-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind"/>
 </p>
-
----
-
-### Experiência
-
-**Full Stack** — Tria Software *(2025–2026)*  
-Sistemas corporativos B2B com React, Angular, Java, C#/.NET e SQL — incidentes, integrações e performance.
-
-**Backend** — iez! telecom *(2024–2025)*  
-Microsserviços em Golang (gRPC/REST), Keycloak, Envoy, Docker e pipelines CI/CD em ambiente de telecom.
-
-**Frontend** — Faculdade Unifahe *(2024)*  
-Plataforma EAD com React, Next.js e Tailwind — entrega de telas, componentes e integração com APIs.
 
 ---
 
