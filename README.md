@@ -15,11 +15,11 @@ Golang · Java · React/Next.js · APIs REST · gRPC · Microsserviços · IA ap
 
 ### Sobre mim
 
-Desenvolvedor Backend / Full Stack com experiência em aplicações web, **APIs REST**, gRPC, microsserviços e interfaces modernas. Gosto de construir soluções que equilibram qualidade técnica, performance e entrega — do design de endpoints à integração entre sistemas e produto.
+Desenvolvedor Backend / Full Stack com experiência em aplicações web, **APIs REST**, gRPC, microsserviços e interfaces modernas. Gosto de construir soluções que equilibram qualidade técnica, performance e entrega do design de endpoints à integração entre sistemas e produto.
 
 Além do desenvolvimento tradicional, estou me atualizando com o que o mercado mais exige hoje: **inteligência artificial aplicada à engenharia de software**. Estudo **engenharia de prompt**, fundamentos de **engenharia de IA**, uso de agentes e LLMs no fluxo de desenvolvimento, e como integrar IA em produtos e processos (automação, análise de código, documentação e produtividade).
 
-No dia a dia uso ferramentas como **Cursor, Copilot e Claude** para acelerar refatoração, debug e escrita técnica — sempre com critério de engenharia, não só “gerar código”.
+No dia a dia uso ferramentas como **Cursor, Copilot e Claude** para acelerar refatoração, debug e escrita técnica sempre com critério de engenharia, não só “gerar código”.
 
 Também curso **pós-graduação em Engenharia de Software** e continuo aprofundando backend (Golang/Java), APIs REST, arquitetura e boas práticas.
 
