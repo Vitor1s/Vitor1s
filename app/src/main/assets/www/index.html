@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#05070d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Raiden X</title>
+<style>
+:root{--bg:#05070d;--op:.55;--sc:1;--u:calc(1cqmin * var(--sc))}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-behavior:none;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;
+  font-family:system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;color:#dfe9ff}
+
+/* ---------- layout ---------- */
+#app{position:fixed;inset:0;display:grid;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  --H:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  grid-template-columns:1fr auto 1fr;grid-template-rows:100%;grid-template-areas:"joy stage btn"}
+#app.swap{grid-template-areas:"btn stage joy"}
+#stage{grid-area:stage;position:relative;background:#000;align-self:center;justify-self:center;
+  --sh:min(var(--H),calc(62vw * 7 / 6));height:var(--sh);width:calc(var(--sh) * 6 / 7);
+  box-shadow:0 0 0 1px #1b2740,0 0 40px #000a}
+#host,#host>*{position:absolute;inset:0;width:100%;height:100%;display:block}
+#drag{position:absolute;inset:0;z-index:3;display:none;touch-action:none}
+body.drag-on #drag{display:block}
+#dragTag{position:absolute;left:6px;top:6px;z-index:4;font-size:11px;font-weight:700;padding:3px 8px;
+  border-radius:99px;background:#35d0ff33;border:1px solid #35d0ff88;display:none;pointer-events:none}
+body.drag-on #dragTag{display:block}
+
+@media (orientation:portrait){
+  #app{grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;grid-template-areas:"stage stage" "joy btn"}
+  #app.swap{grid-template-areas:"stage stage" "btn joy"}
+  #stage{--sw:min(100vw,calc(66dvh * 6 / 7));width:var(--sw);height:calc(var(--sw) * 7 / 6);align-self:start}
+}
+
+.panel{position:relative;container-type:size;min-width:0;min-height:0}
+#joy{grid-area:joy}
+#btn{grid-area:btn}
+
+/* ---------- joystick ---------- */
+#joyBase{position:absolute;left:50%;top:62%;width:60cqmin;height:60cqmin;margin:-30cqmin 0 0 -30cqmin;
+  border-radius:50%;border:2px solid rgba(120,190,255,.45);background:rgba(20,32,60,calc(var(--op) * .55));
+  opacity:.55;transition:opacity .12s;pointer-events:none}
+#joyBase.on{opacity:1}
+#joyBase::before,#joyBase::after{content:"";position:absolute;background:rgba(120,190,255,.18)}
+#joyBase::before{left:50%;top:10%;bottom:10%;width:2px;margin-left:-1px}
+#joyBase::after{top:50%;left:10%;right:10%;height:2px;margin-top:-1px}
+#joyKnob{position:absolute;left:50%;top:50%;width:42%;height:42%;margin:-21% 0 0 -21%;border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#8fe3ff,#2a8fd0 70%);border:2px solid #d6f3ff;
+  box-shadow:0 2px 10px #0008}
+
+/* ---------- botões ---------- */
+.b{position:absolute;display:flex;align-items:center;justify-content:center;flex-direction:column;
+  border-radius:50%;font-weight:800;letter-spacing:.05em;color:#fff;text-shadow:0 1px 2px #000;
+  background:rgba(20,32,60,var(--op));border:2px solid rgba(120,190,255,.6);touch-action:none;
+  cursor:pointer;line-height:1.05}
+.b small{font-size:.55em;font-weight:600;opacity:.8;letter-spacing:.03em}
+.b.down{filter:brightness(1.7) saturate(1.2)}
+#bFire{width:calc(46 * var(--u));height:calc(46 * var(--u));right:calc(6 * var(--u));bottom:calc(10 * var(--u));
+  font-size:calc(8 * var(--u));background:rgba(255,110,30,var(--op));border-color:#ffc08a}
+#bBomb{width:calc(34 * var(--u));height:calc(34 * var(--u));right:calc(55 * var(--u));bottom:calc(12 * var(--u));
+  font-size:calc(6.5 * var(--u));background:rgba(210,40,70,var(--op));border-color:#ff9aae}
+#bAuto{width:calc(22 * var(--u));height:calc(22 * var(--u));right:calc(16 * var(--u));bottom:calc(62 * var(--u));
+  font-size:calc(4.6 * var(--u))}
+#bAuto.on{background:rgba(60,220,120,.7);border-color:#b6ffd0}
+#bPause,#bStart{top:calc(6 * var(--u));width:calc(27 * var(--u));height:calc(13 * var(--u));
+  border-radius:99px;font-size:calc(4.6 * var(--u))}
+#bPause{right:calc(6 * var(--u))}
+#bStart{right:calc(37 * var(--u))}
+
+#bar{grid-area:joy;align-self:start;justify-self:start;display:flex;gap:10px;padding:10px;z-index:6}
+.ic{width:44px;height:44px;border-radius:12px;background:rgba(20,32,60,.7);border:1px solid rgba(120,190,255,.5);
+  color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.ic:active{filter:brightness(1.6)}
+
+/* ---------- teclado (nome no ranking) ---------- */
+#kp{position:fixed;left:0;right:0;bottom:0;z-index:20;display:none;padding:10px 10px calc(10px + env(safe-area-inset-bottom));
+  background:rgba(5,9,18,.94);border-top:1px solid #35d0ff55}
+#kp.show{display:block}
+#kpGrid{display:grid;grid-template-columns:repeat(10,1fr);gap:6px;max-width:640px;margin:0 auto}
+#kpGrid .k{height:44px;border-radius:8px;background:#14203c;border:1px solid #3a5a8a;color:#fff;font-weight:700;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+#kpGrid .k.wide{grid-column:span 3;background:#1c3a63}
+#kpGrid .k.down{background:#35d0ff;color:#000}
+
+/* ---------- telas ---------- */
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.72)}
+.modal.show{display:flex}
+.card{width:min(92vw,420px);max-height:90dvh;overflow:auto;background:#0b1424;border:1px solid #35d0ff66;border-radius:16px;padding:18px}
+.card h2{margin:0 0 12px;font-size:18px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 4px;border-bottom:1px solid #1b2b48;font-size:15px}
+.row small{display:block;opacity:.65;font-size:12px;margin-top:2px}
+.row input[type=checkbox]{width:26px;height:26px;accent-color:#35d0ff;flex:none}
+.row input[type=range]{width:140px;accent-color:#35d0ff}
+.btns{display:flex;gap:10px;margin-top:14px}
+.btn{flex:1;padding:13px;border-radius:12px;border:1px solid #35d0ff88;background:#12315a;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+.btn.alt{background:#1a2236;border-color:#3a4a6a}
+
+#intro{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;
+  background:radial-gradient(circle at 50% 30%,#10203d,#03050a 70%);text-align:center;padding:20px}
+#intro img{width:min(70vw,300px);image-rendering:pixelated;border:2px solid #35d0ff88;border-radius:10px}
+#intro h1{margin:0;font-size:34px;letter-spacing:.14em}
+#intro p{margin:0;opacity:.75;font-size:14px;max-width:340px}
+#go{padding:16px 34px;font-size:18px;font-weight:800;border-radius:99px;border:2px solid #ffc08a;
+  background:#ff6e1e;color:#fff;cursor:pointer;letter-spacing:.06em}
+#toast{position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:50;background:#7a1630;color:#fff;
+  padding:10px 16px;border-radius:10px;font-size:14px;display:none;max-width:90vw}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="stage">
+    <div id="host"></div>
+    <div id="drag"></div>
+    <div id="dragTag">ARRASTAR</div>
+  </div>
+
+  <div id="joy" class="panel"><div id="joyBase"><div id="joyKnob"></div></div></div>
+  <div id="bar">
+    <div class="ic" id="icCfg" title="Ajustes">⚙</div>
+    <div class="ic" id="icKb" title="Teclado">⌨</div>
+    <div class="ic" id="icFs" title="Tela cheia">⛶</div>
+  </div>
+
+  <div id="btn" class="panel">
+    <div class="b" id="bPause">PAUSA</div>
+    <div class="b" id="bStart">START</div>
+    <div class="b" id="bAuto">AUTO<small>tiro</small></div>
+    <div class="b" id="bBomb">BOMBA<small>poder</small></div>
+    <div class="b" id="bFire">TIRO</div>
+  </div>
+</div>
+
+<div id="kp"><div id="kpGrid"></div></div>
+
+<div id="cfg" class="modal"><div class="card">
+  <h2>Ajustes</h2>
+  <label class="row"><span>Modo arrastar<small>Arraste o dedo sobre o jogo para mover a nave. Desligue para tocar nos menus.</small></span><input type="checkbox" id="cDrag"></label>
+  <label class="row"><span>Vibração</span><input type="checkbox" id="cHap"></label>
+  <label class="row"><span>Inverter lados<small>Joystick na direita, botões na esquerda</small></span><input type="checkbox" id="cSwap"></label>
+  <label class="row"><span>Tamanho dos botões</span><input type="range" id="cScale" min="0.8" max="1.1" step="0.05"></label>
+  <label class="row"><span>Transparência</span><input type="range" id="cOp" min="0.25" max="0.9" step="0.05"></label>
+  <div class="btns">
+    <button class="btn alt" id="cRestart">Reiniciar jogo</button>
+    <button class="btn" id="cClose">Fechar</button>
+  </div>
+</div></div>
+
+<div id="intro">
+  <img src="raidenx.jpg" alt="Raiden X">
+  <h1>RAIDEN X</h1>
+  <p>Joystick à esquerda, TIRO e BOMBA à direita. Use ⌨ para digitar seu nome no ranking.</p>
+  <button id="go">TOCAR PARA JOGAR</button>
+</div>
+<div id="toast"></div>
+
+<script src="ruffle/ruffle.js"></script>
+<script>
+(() => {
+'use strict';
+const $ = s => document.querySelector(s);
+const CFG_KEY = 'raidenx.cfg.v1';
+
+/* ---------- configurações ---------- */
+function loadCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch (e) { return {}; } }
+const cfg = Object.assign({ auto: false, drag: false, haptic: true, swap: false, scale: 1, op: 0.55 }, loadCfg());
+function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} }
+
+/* ---------- teclas do jogo (código, key, keyCode) ---------- */
+const K = {
+  left: ['ArrowLeft', 'ArrowLeft', 37], right: ['ArrowRight', 'ArrowRight', 39],
+  up: ['ArrowUp', 'ArrowUp', 38], down: ['ArrowDown', 'ArrowDown', 40],
+  fire: ['KeyZ', 'z', 90],        // atirar  (shtopt = 90 no jogo)
+  bomb: ['KeyX', 'x', 88],        // bomba   (bbopt  = 88 no jogo)
+  pause: ['ControlLeft', 'Control', 17],
+  enter: ['Enter', 'Enter', 13], space: ['Space', ' ', 32], back: ['Backspace', 'Backspace', 8]
+};
+for (let i = 0; i < 26; i++) { const c = String.fromCharCode(65 + i); K[c] = ['Key' + c, c.toLowerCase(), 65 + i]; }
+for (let i = 0; i < 10; i++) K['d' + i] = ['Digit' + i, String(i), 48 + i];
+
+let playerEl = null;
+const keyState = {};
+const minHold = n => (n === 'left' || n === 'right' || n === 'up' || n === 'down') ? 34 : 90;
+
+function target() {
+  if (!playerEl) return null;
+  const c = playerEl.shadowRoot && playerEl.shadowRoot.querySelector('canvas');
+  return c || playerEl;
+}
+function emit(type, name) {
+  const t = target(); if (!t) return;
+  const [code, key, kc] = K[name];
+  t.dispatchEvent(new KeyboardEvent(type, {
+    code, key, keyCode: kc, which: kc, bubbles: true, cancelable: true, composed: true,
+    ctrlKey: name === 'pause' && type === 'keydown'
+  }));
+}
+function focusPlayer() {
+  if (playerEl && document.activeElement !== playerEl) { try { playerEl.focus({ preventScroll: true }); } catch (e) {} }
+}
+function press(name, owner) {
+  const s = keyState[name] || (keyState[name] = { owners: new Set(), down: false, at: 0, timer: 0 });
+  s.owners.add(owner);
+  if (s.timer) { clearTimeout(s.timer); s.timer = 0; }
+  if (!s.down) { s.down = true; s.at = performance.now(); focusPlayer(); emit('keydown', name); }
+}
+function release(name, owner) {
+  const s = keyState[name]; if (!s) return;
+  s.owners.delete(owner);
+  if (s.owners.size || !s.down) return;
+  const up = () => { s.timer = 0; if (s.owners.size) return; s.down = false; emit('keyup', name); };
+  const wait = Math.max(0, minHold(name) - (performance.now() - s.at));
+  if (wait > 0) { if (!s.timer) s.timer = setTimeout(up, wait); } else up();
+}
+function releaseAll() {
+  for (const n in keyState) {
+    const s = keyState[n]; s.owners.clear();
+    if (s.timer) { clearTimeout(s.timer); s.timer = 0; }
+    if (s.down) { s.down = false; emit('keyup', n); }
+  }
+}
+const haptic = ms => { if (cfg.haptic && navigator.vibrate) { try { navigator.vibrate(ms); } catch (e) {} } };
+
+/* ---------- botões (segurar = tecla pressionada) ---------- */
+function bindHold(el, name, owner) {
+  let pid = null;
+  el.addEventListener('pointerdown', e => {
+    if (pid !== null) return;
+    e.preventDefault(); pid = e.pointerId;
+    try { el.setPointerCapture(pid); } catch (x) {}
+    el.classList.add('down'); haptic(12); press(name, owner);
+  });
+  const up = e => {
+    if (e.pointerId !== pid) return;
+    pid = null; el.classList.remove('down'); release(name, owner);
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+}
+bindHold($('#bFire'), 'fire', 'btn');
+bindHold($('#bBomb'), 'bomb', 'btn');
+bindHold($('#bPause'), 'pause', 'btn');
+bindHold($('#bStart'), 'enter', 'btn');
+
+/* AUTO: mantém o tiro apertado sozinho */
+const bAuto = $('#bAuto');
+function applyAuto() {
+  bAuto.classList.toggle('on', cfg.auto);
+  if (cfg.auto) press('fire', 'auto'); else release('fire', 'auto');
+}
+bAuto.addEventListener('pointerdown', e => { e.preventDefault(); cfg.auto = !cfg.auto; saveCfg(); haptic(15); applyAuto(); });
+
+/* ---------- joystick flutuante (8 direções) ---------- */
+const joy = $('#joy'), joyBase = $('#joyBase'), joyKnob = $('#joyKnob');
+let joyId = null, jox = 0, joy0 = 0, jR = 60;
+const dir = { left: false, right: false, up: false, down: false };
+
+// decide as direções a partir do deslocamento (dx,dy); retorna objeto novo
+function dirFrom(dx, dy, R, cur) {
+  const ax = Math.abs(dx), ay = Math.abs(dy), T = 0.4142;       // tan(22,5°) -> setores de 45°
+  const dead = R * 0.28, th = k => k ? dead * 0.75 : dead;      // histerese
+  const hx = ax > th(cur.left || cur.right) && ax > ay * T;
+  const hy = ay > th(cur.up || cur.down) && ay > ax * T;
+  return { left: hx && dx < 0, right: hx && dx > 0, up: hy && dy < 0, down: hy && dy > 0 };
+}
+function applyDir(next, owner) {
+  for (const k of ['left', 'right', 'up', 'down']) {
+    if (next[k] && !dir[k]) press(k, owner);
+    if (!next[k] && dir[k]) release(k, owner);
+    dir[k] = next[k];
+  }
+}
+function joyMove(e) {
+  let dx = e.clientX - jox, dy = e.clientY - joy0;
+  const d = Math.hypot(dx, dy);
+  applyDir(dirFrom(dx, dy, jR, dir), 'joy');
+  if (d > jR) { dx = dx / d * jR; dy = dy / d * jR; }
+  joyKnob.style.transform = `translate(${dx / (joyKnob.offsetWidth || 1) * 100}%,${dy / (joyKnob.offsetHeight || 1) * 100}%)`;
+}
+function joyEnd() {
+  joyId = null; joyBase.classList.remove('on');
+  joyBase.style.left = joyBase.style.top = ''; joyBase.style.margin = '';
+  joyKnob.style.transform = '';
+  applyDir({ left: false, right: false, up: false, down: false }, 'joy');
+}
+joy.addEventListener('pointerdown', e => {
+  if (joyId !== null) return;
+  e.preventDefault(); joyId = e.pointerId;
+  try { joy.setPointerCapture(joyId); } catch (x) {}
+  const r = joy.getBoundingClientRect();
+  jR = Math.max(40, (joyBase.getBoundingClientRect().width || 120) / 2);
+  const pad = jR * 0.9;                                // base inteira dentro do painel
+  jox = r.width ? Math.min(Math.max(e.clientX, r.left + pad), r.right - pad) : e.clientX;
+  joy0 = r.height ? Math.min(Math.max(e.clientY, r.top + pad), r.bottom - pad) : e.clientY;
+  joyBase.style.left = (jox - r.left) + 'px'; joyBase.style.top = (joy0 - r.top) + 'px';
+  joyBase.style.margin = (-jR) + 'px 0 0 ' + (-jR) + 'px';
+  joyBase.classList.add('on'); haptic(8); joyMove(e);
+});
+joy.addEventListener('pointermove', e => { if (e.pointerId === joyId) joyMove(e); });
+joy.addEventListener('pointerup', e => { if (e.pointerId === joyId) joyEnd(); });
+joy.addEventListener('pointercancel', e => { if (e.pointerId === joyId) joyEnd(); });
+
+/* ---------- modo arrastar: a nave segue o dedo ---------- */
+const dragEl = $('#drag'), stageEl = $('#stage');
+let dragId = null, dlx = 0, dly = 0, dax = 0, day = 0, dlast = 0, draf = 0;
+function dragAxis(a, neg, pos, step) {
+  if (a > step * 0.6) { press(pos, 'drag'); release(neg, 'drag'); return a - step; }
+  if (a < -step * 0.6) { press(neg, 'drag'); release(pos, 'drag'); return a + step; }
+  release(pos, 'drag'); release(neg, 'drag'); return a;
+}
+function dragLoop(now) {
+  const dt = Math.min(50, now - dlast) / 1000; dlast = now;
+  const step = 4.5 * 60 * dt;                          // velocidade da nave no jogo (4,5 px/frame)
+  dax = dragAxis(dax, 'left', 'right', step);
+  day = dragAxis(day, 'up', 'down', step);
+  if (dragId !== null) draf = requestAnimationFrame(dragLoop);
+}
+dragEl.addEventListener('pointerdown', e => {
+  if (dragId !== null) return;
+  e.preventDefault(); dragId = e.pointerId;
+  try { dragEl.setPointerCapture(dragId); } catch (x) {}
+  dlx = e.clientX; dly = e.clientY; dax = day = 0; dlast = performance.now();
+  cancelAnimationFrame(draf); draf = requestAnimationFrame(dragLoop);
+});
+dragEl.addEventListener('pointermove', e => {
+  if (e.pointerId !== dragId) return;
+  const k = (stageEl.getBoundingClientRect().width || 300) / 300;   // px da tela -> px do jogo
+  dax = Math.max(-60, Math.min(60, dax + (e.clientX - dlx) / k));
+  day = Math.max(-60, Math.min(60, day + (e.clientY - dly) / k));
+  dlx = e.clientX; dly = e.clientY;
+});
+function dragEnd(e) {
+  if (e.pointerId !== dragId) return;
+  dragId = null; cancelAnimationFrame(draf);
+  for (const k of ['left', 'right', 'up', 'down']) release(k, 'drag');
+}
+dragEl.addEventListener('pointerup', dragEnd);
+dragEl.addEventListener('pointercancel', dragEnd);
+
+/* ---------- teclado para digitar o nome ---------- */
+const kpGrid = $('#kpGrid');
+'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(c => addKey(c, c));
+for (let i = 0; i < 10; i++) addKey('d' + i, String(i));
+addKey('back', '⌫ apagar', true); addKey('enter', 'OK / Enter', true); addKey('space', 'Espaço', true);
+function addKey(name, label, wide) {
+  const d = document.createElement('div');
+  d.className = 'k' + (wide ? ' wide' : ''); d.textContent = label; kpGrid.appendChild(d);
+  bindHold(d, name, 'kp');
+}
+$('#icKb').addEventListener('click', () => $('#kp').classList.toggle('show'));
+
+/* ---------- ajustes ---------- */
+function applyCfg() {
+  $('#app').classList.toggle('swap', cfg.swap);
+  document.body.classList.toggle('drag-on', cfg.drag);
+  document.documentElement.style.setProperty('--sc', cfg.scale);
+  document.documentElement.style.setProperty('--op', cfg.op);
+  $('#cDrag').checked = cfg.drag; $('#cHap').checked = cfg.haptic; $('#cSwap').checked = cfg.swap;
+  $('#cScale').value = cfg.scale; $('#cOp').value = cfg.op;
+  if (!cfg.drag && dragId !== null) { dragId = null; for (const k of ['left', 'right', 'up', 'down']) release(k, 'drag'); }
+}
+const on = (id, ev, fn) => $(id).addEventListener(ev, fn);
+on('#cDrag', 'change', e => { cfg.drag = e.target.checked; saveCfg(); applyCfg(); });
+on('#cHap', 'change', e => { cfg.haptic = e.target.checked; saveCfg(); });
+on('#cSwap', 'change', e => { cfg.swap = e.target.checked; saveCfg(); applyCfg(); });
+on('#cScale', 'input', e => { cfg.scale = +e.target.value; saveCfg(); applyCfg(); });
+on('#cOp', 'input', e => { cfg.op = +e.target.value; saveCfg(); applyCfg(); });
+on('#icCfg', 'click', () => $('#cfg').classList.add('show'));
+on('#cClose', 'click', () => $('#cfg').classList.remove('show'));
+on('#cRestart', 'click', () => { $('#cfg').classList.remove('show'); startPlayer(); });
+
+/* ---------- tela cheia ---------- */
+const root = document.documentElement;
+if (!root.requestFullscreen) $('#icFs').style.display = 'none';
+on('#icFs', 'click', () => {
+  if (document.fullscreenElement) document.exitFullscreen(); else root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+});
+
+/* ---------- Ruffle ---------- */
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.style.display = 'block';
+  setTimeout(() => { t.style.display = 'none'; }, 6000);
+}
+function startPlayer() {
+  releaseAll();
+  if (!window.RufflePlayer) { toast('Ruffle não carregou. Abra por http://localhost (servidor), não por arquivo.'); return; }
+  const host = $('#host'); host.innerHTML = '';
+  const ruffle = window.RufflePlayer.newest();
+  playerEl = ruffle.createPlayer();
+  host.appendChild(playerEl);
+  try {
+    const p = playerEl.load({
+      url: 'raidenx.swf', autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false,
+      letterbox: 'on', contextMenu: 'off', warnOnUnsupportedContent: false, scale: 'showAll',
+      backgroundColor: '#000000', quality: 'high', openUrlMode: 'deny', logLevel: 'error'
+    });
+    if (p && p.catch) p.catch(err => toast('Erro ao carregar o jogo: ' + err));
+  } catch (err) { toast('Erro ao carregar o jogo: ' + err); }
+  focusPlayer(); applyAuto();
+}
+let wakeLock = null;
+async function keepAwake() {
+  try { if ('wakeLock' in navigator && !document.hidden) wakeLock = await navigator.wakeLock.request('screen'); } catch (e) {}
+}
+document.addEventListener('visibilitychange', () => { if (document.hidden) releaseAll(); else keepAwake(); });
+window.addEventListener('blur', releaseAll);
+document.addEventListener('contextmenu', e => e.preventDefault());
+
+on('#go', 'click', () => {
+  $('#intro').style.display = 'none';
+  startPlayer(); keepAwake();
+  if (root.requestFullscreen && !document.fullscreenElement && !matchMedia('(display-mode: fullscreen)').matches) {
+    root.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+  }
+});
+
+applyCfg(); applyAuto();
+if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+window.__raidenx = { press, release, dirFrom, K };   // facilita testes
+})();
+</script>
+</body>
+</html>
