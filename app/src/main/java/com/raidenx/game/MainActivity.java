@@ -12,13 +12,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.net.Uri;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 public class MainActivity extends Activity {
     private WebView webView;
-    private static final String ROOT = "assets/www/";
+    private static final String ASSET_HOST = "appassets.androidplatform.net";
+    private static final String ASSET_PREFIX = "/assets/";
 
     @Override
     protected void onCreate(Bundle state) {
@@ -39,32 +43,56 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
+        settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
 
         webView.setWebChromeClient(new WebChromeClient());
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public WebResourceResponse shouldInterceptRequest(WebView view, WebResourceRequest request) {
-                Uri uri = request.getUrl();
-                if (!"https".equals(uri.getScheme()) ||
-                    !"appassets.androidplatform.net".equals(uri.getHost())) {
-                    return new WebResourceResponse("text/plain", "UTF-8", null);
-                }
-                String path = uri.getPath();
-                if (path == null || !path.startsWith("/assets/www/") || path.contains("..")) {
-                    return new WebResourceResponse("text/plain", "UTF-8", null);
-                }
-                String relative = path.substring(1);
-                try {
-                    InputStream stream = getAssets().open(relative);
-                    return new WebResourceResponse(mimeType(relative), null, stream);
-                } catch (IOException e) {
-                    return new WebResourceResponse("text/plain", "UTF-8", null);
-                }
+                return localAsset(request.getUrl());
             }
         });
 
         setContentView(webView);
         webView.loadUrl("https://appassets.androidplatform.net/assets/www/index.html");
+    }
+
+    private WebResourceResponse localAsset(Uri uri) {
+        if (uri == null || !"https".equals(uri.getScheme()) || !ASSET_HOST.equals(uri.getHost())) {
+            return null;
+        }
+        String path = uri.getPath();
+        if (path == null || !path.startsWith(ASSET_PREFIX) || path.contains("..")) {
+            return textResponse(404, "Not Found");
+        }
+        // /assets/www/index.html -> www/index.html (AssetManager já parte de assets/)
+        String assetPath = path.substring(ASSET_PREFIX.length());
+        if (assetPath.isEmpty()) {
+            return textResponse(404, "Not Found");
+        }
+        try {
+            InputStream stream = getAssets().open(assetPath);
+            String mime = mimeType(assetPath);
+            boolean text = mime.startsWith("text/")
+                || mime.contains("javascript")
+                || mime.contains("json");
+            String encoding = text ? "utf-8" : null;
+            Map<String, String> headers = new HashMap<>();
+            headers.put("Content-Type", text ? mime + "; charset=utf-8" : mime);
+            headers.put("Access-Control-Allow-Origin", "*");
+            headers.put("Cache-Control", "no-store");
+            return new WebResourceResponse(mime, encoding, 200, "OK", headers, stream);
+        } catch (IOException e) {
+            return textResponse(404, "Not Found");
+        }
+    }
+
+    private WebResourceResponse textResponse(int status, String reason) {
+        Map<String, String> headers = new HashMap<>();
+        headers.put("Content-Type", "text/plain; charset=utf-8");
+        headers.put("Cache-Control", "no-store");
+        return new WebResourceResponse(
+            "text/plain", "utf-8", status, reason, headers, new ByteArrayInputStream(new byte[0]));
     }
 
     private String mimeType(String path) {

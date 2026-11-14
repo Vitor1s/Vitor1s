@@ -422,7 +422,9 @@ on('#go', 'click', () => {
 });
 
 applyCfg(); applyAuto();
-if ('serviceWorker' in navigator && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
+if ('serviceWorker' in navigator
+    && location.hostname !== 'appassets.androidplatform.net'
+    && (location.protocol === 'https:' || /^(localhost|127\.0\.0\.1)$/.test(location.hostname))) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 window.__raidenx = { press, release, dirFrom, K };   // facilita testes
