@@ -36,8 +36,10 @@ Também funciona hospedando a pasta inteira em qualquer site https
 | ⚙ | – | Modo arrastar, vibração, inverter lados, tamanho, transparência, reiniciar |
 | ⛶ | – | Tela cheia |
 
-**Modo arrastar** (em ⚙): a nave segue o dedo em qualquer ponto do jogo, na velocidade
-máxima da nave. Desligue para tocar nos botões dos menus do jogo.
+**Toque direto** (em ⚙, ligado por padrão): na vertical o jogo ocupa a tela inteira.
+Onde você toca, a nave vai — na hora, na velocidade máxima do jogo, sem atraso.
+Soltar o dedo não cancela: ela termina o trajeto até o último ponto. Desligue para
+tocar nos botões dos menus do jogo.
 Teclado físico e gamepad com mapeamento de teclado também continuam funcionando.
 
 ## Arquivos
