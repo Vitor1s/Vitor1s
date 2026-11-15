@@ -27,16 +27,24 @@ html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;overscroll-b
   --sh:min(var(--H),calc(62vw * 7 / 6));height:var(--sh);width:calc(var(--sh) * 6 / 7);
   box-shadow:0 0 0 1px #1b2740,0 0 40px #000a}
 #host,#host>*{position:absolute;inset:0;width:100%;height:100%;display:block}
-#drag{position:absolute;inset:0;z-index:3;display:none;touch-action:none}
+#drag{position:absolute;inset:0;z-index:3;display:none;pointer-events:none}
 body.drag-on #drag{display:block}
 #dragTag{position:absolute;left:6px;top:6px;z-index:4;font-size:11px;font-weight:700;padding:3px 8px;
   border-radius:99px;background:#35d0ff33;border:1px solid #35d0ff88;display:none;pointer-events:none}
 body.drag-on #dragTag{display:block}
 
 @media (orientation:portrait){
-  #app{grid-template-columns:1fr 1fr;grid-template-rows:auto 1fr;grid-template-areas:"stage stage" "joy btn"}
-  #app.swap{grid-template-areas:"stage stage" "btn joy"}
-  #stage{--sw:min(100vw,calc(66dvh * 6 / 7));width:var(--sw);height:calc(var(--sw) * 7 / 6);align-self:start}
+  #app{display:block;padding:0}
+  #stage{position:absolute;inset:0;width:100%;height:100%;box-shadow:none}
+  #joy,#btn{position:absolute;z-index:6;top:auto;bottom:env(safe-area-inset-bottom);width:48%;height:46%}
+  #joy{left:0}
+  #btn{right:0}
+  #app.swap #joy{left:auto;right:0}
+  #app.swap #btn{right:auto;left:0}
+  #bar{position:absolute;z-index:8;top:env(safe-area-inset-top);left:env(safe-area-inset-left)}
+  body.drag-on #joy{visibility:hidden;pointer-events:none}
+  body.drag-on #btn{pointer-events:none}
+  body.drag-on #btn .b{pointer-events:auto}
 }
 
 .panel{position:relative;container-type:size;min-width:0;min-height:0}
@@ -119,7 +127,7 @@ body.drag-on #dragTag{display:block}
   <div id="stage">
     <div id="host"></div>
     <div id="drag"></div>
-    <div id="dragTag">ARRASTAR</div>
+    <div id="dragTag">TOQUE</div>
   </div>
 
   <div id="joy" class="panel"><div id="joyBase"><div id="joyKnob"></div></div></div>
@@ -142,7 +150,7 @@ body.drag-on #dragTag{display:block}
 
 <div id="cfg" class="modal"><div class="card">
   <h2>Ajustes</h2>
-  <label class="row"><span>Modo arrastar<small>Arraste o dedo sobre o jogo para mover a nave. Desligue para tocar nos menus.</small></span><input type="checkbox" id="cDrag"></label>
+  <label class="row"><span>Toque direto<small>A nave vai na hora para onde você toca. Desligue para usar os menus do jogo.</small></span><input type="checkbox" id="cDrag"></label>
   <label class="row"><span>Vibração</span><input type="checkbox" id="cHap"></label>
   <label class="row"><span>Inverter lados<small>Joystick na direita, botões na esquerda</small></span><input type="checkbox" id="cSwap"></label>
   <label class="row"><span>Tamanho dos botões</span><input type="range" id="cScale" min="0.8" max="1.1" step="0.05"></label>
@@ -156,7 +164,7 @@ body.drag-on #dragTag{display:block}
 <div id="intro">
   <img src="raidenx.jpg" alt="Raiden X">
   <h1>RAIDEN X</h1>
-  <p>Joystick à esquerda, TIRO e BOMBA à direita. Use ⌨ para digitar seu nome no ranking.</p>
+  <p>Na vertical o jogo ocupa a tela toda. Com o toque direto, a nave vai para o dedo. Use ⌨ para o ranking.</p>
   <button id="go">TOCAR PARA JOGAR</button>
 </div>
 <div id="toast"></div>
@@ -170,7 +178,7 @@ const CFG_KEY = 'raidenx.cfg.v1';
 
 /* ---------- configurações ---------- */
 function loadCfg() { try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch (e) { return {}; } }
-const cfg = Object.assign({ auto: false, drag: false, haptic: true, swap: false, scale: 1, op: 0.55 }, loadCfg());
+const cfg = Object.assign({ auto: false, drag: true, haptic: true, swap: false, scale: 1, op: 0.55 }, loadCfg());
 function saveCfg() { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} }
 
 /* ---------- teclas do jogo (código, key, keyCode) ---------- */
@@ -210,6 +218,7 @@ function press(name, owner) {
   s.owners.add(owner);
   if (s.timer) { clearTimeout(s.timer); s.timer = 0; }
   if (!s.down) { s.down = true; s.at = performance.now(); focusPlayer(); emit('keydown', name); }
+  if (name === 'left' || name === 'right' || name === 'up' || name === 'down') ensureFly();
 }
 function release(name, owner) {
   const s = keyState[name]; if (!s) return;
@@ -307,42 +316,108 @@ joy.addEventListener('pointermove', e => { if (e.pointerId === joyId) joyMove(e)
 joy.addEventListener('pointerup', e => { if (e.pointerId === joyId) joyEnd(); });
 joy.addEventListener('pointercancel', e => { if (e.pointerId === joyId) joyEnd(); });
 
-/* ---------- modo arrastar: a nave segue o dedo ---------- */
-const dragEl = $('#drag'), stageEl = $('#stage');
-let dragId = null, dlx = 0, dly = 0, dax = 0, day = 0, dlast = 0, draf = 0;
-function dragAxis(a, neg, pos, step) {
-  if (a > step * 0.6) { press(pos, 'drag'); release(neg, 'drag'); return a - step; }
-  if (a < -step * 0.6) { press(neg, 'drag'); release(pos, 'drag'); return a + step; }
-  release(pos, 'drag'); release(neg, 'drag'); return a;
+/* ---------- toque direto: a nave vai para o dedo ---------- */
+const stageEl = $('#stage');
+const SPEED = 4.5;                 // px por frame, a mesma do jogo
+const STOP = SPEED * 0.45;         // para dentro de meio passo, sem oscilar
+const FRAME = 1000 / 60;
+const MIN_X = 15, MAX_X = 285, MIN_Y = 48, MAX_Y = 340;
+let shipX = 150, shipY = 255;      // posição inicial da nave no SWF
+let touchTarget = null;
+let flyId = null, flyRaf = 0, flyAcc = 0, flyLast = 0;
+let stageBox = null;
+
+function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+function refreshStage() {
+  const r = stageEl.getBoundingClientRect();
+  stageBox = { left: r.left, top: r.top, width: r.width || 300, height: r.height || 350 };
 }
-function dragLoop(now) {
-  const dt = Math.min(50, now - dlast) / 1000; dlast = now;
-  const step = 4.5 * 60 * dt;                          // velocidade da nave no jogo (4,5 px/frame)
-  dax = dragAxis(dax, 'left', 'right', step);
-  day = dragAxis(day, 'up', 'down', step);
-  if (dragId !== null) draf = requestAnimationFrame(dragLoop);
+function toGame(x, y) {
+  if (!stageBox) refreshStage();
+  return {
+    x: clamp((x - stageBox.left) / stageBox.width * 300, MIN_X, MAX_X),
+    y: clamp((y - stageBox.top) / stageBox.height * 350, MIN_Y, MAX_Y)
+  };
 }
-dragEl.addEventListener('pointerdown', e => {
-  if (dragId !== null) return;
-  e.preventDefault(); dragId = e.pointerId;
-  try { dragEl.setPointerCapture(dragId); } catch (x) {}
-  dlx = e.clientX; dly = e.clientY; dax = day = 0; dlast = performance.now();
-  cancelAnimationFrame(draf); draf = requestAnimationFrame(dragLoop);
-});
-dragEl.addEventListener('pointermove', e => {
-  if (e.pointerId !== dragId) return;
-  const k = (stageEl.getBoundingClientRect().width || 300) / 300;   // px da tela -> px do jogo
-  dax = Math.max(-60, Math.min(60, dax + (e.clientX - dlx) / k));
-  day = Math.max(-60, Math.min(60, day + (e.clientY - dly) / k));
-  dlx = e.clientX; dly = e.clientY;
-});
-function dragEnd(e) {
-  if (e.pointerId !== dragId) return;
-  dragId = null; cancelAnimationFrame(draf);
-  for (const k of ['left', 'right', 'up', 'down']) release(k, 'drag');
+function dirDown(name) { return !!(keyState[name] && keyState[name].down); }
+function holdDir(name, on) {
+  const s = keyState[name] || (keyState[name] = { owners: new Set(), down: false, at: 0, timer: 0 });
+  if (s.timer) { clearTimeout(s.timer); s.timer = 0; }
+  if (on) {
+    s.owners.add('drag');
+    if (!s.down) { s.down = true; s.at = performance.now(); focusPlayer(); emit('keydown', name); }
+  } else if (s.owners.has('drag')) {
+    s.owners.delete('drag');
+    if (!s.owners.size && s.down) { s.down = false; emit('keyup', name); }
+  }
 }
-dragEl.addEventListener('pointerup', dragEnd);
-dragEl.addEventListener('pointercancel', dragEnd);
+function steer() {
+  if (!touchTarget) return;
+  const dx = touchTarget.x - shipX, dy = touchTarget.y - shipY;
+  holdDir('left', dx < -STOP);
+  holdDir('right', dx > STOP);
+  holdDir('up', dy < -STOP);
+  holdDir('down', dy > STOP);
+  if (Math.abs(dx) <= STOP && Math.abs(dy) <= STOP && flyId === null) {
+    touchTarget = null;
+    holdDir('left', false); holdDir('right', false); holdDir('up', false); holdDir('down', false);
+  }
+}
+function flyStep() {
+  steer();
+  if (dirDown('left')) shipX -= SPEED;
+  else if (dirDown('right')) shipX += SPEED;
+  if (dirDown('up')) shipY -= SPEED;
+  else if (dirDown('down')) shipY += SPEED;
+  shipX = clamp(shipX, MIN_X, MAX_X);
+  shipY = clamp(shipY, MIN_Y, MAX_Y);
+}
+function flyMoving() {
+  return flyId !== null || touchTarget || dirDown('left') || dirDown('right') || dirDown('up') || dirDown('down');
+}
+function flyLoop(now) {
+  if (!flyLast) flyLast = now;
+  flyAcc += Math.min(34, now - flyLast);
+  flyLast = now;
+  let n = 0;
+  while (flyAcc >= FRAME && n < 2) { flyAcc -= FRAME; flyStep(); n++; }
+  if (flyMoving()) flyRaf = requestAnimationFrame(flyLoop);
+  else { flyRaf = 0; flyLast = 0; flyAcc = 0; }
+}
+function ensureFly() {
+  if (!flyRaf) { flyLast = 0; flyAcc = FRAME; flyRaf = requestAnimationFrame(flyLoop); }
+}
+function setTarget(x, y) {
+  const p = toGame(x, y);
+  if (touchTarget) { touchTarget.x = p.x; touchTarget.y = p.y; }
+  else touchTarget = p;
+  steer();
+  ensureFly();
+}
+function touchStart(e) {
+  if (!cfg.drag || flyId !== null || e.button > 0) return;
+  flyId = e.pointerId;
+  try { stageEl.setPointerCapture(flyId); } catch (err) {}
+  refreshStage();
+  setTarget(e.clientX, e.clientY);
+}
+function touchMove(e) {
+  if (e.pointerId !== flyId) return;
+  if (e.cancelable) e.preventDefault();
+  setTarget(e.clientX, e.clientY);
+}
+function touchEnd(e) {
+  if (e.pointerId !== flyId) return;
+  setTarget(e.clientX, e.clientY);
+  flyId = null;
+}
+stageEl.addEventListener('pointerdown', touchStart);
+stageEl.addEventListener('pointermove', touchMove);
+if ('onpointerrawupdate' in stageEl) stageEl.addEventListener('pointerrawupdate', touchMove);
+stageEl.addEventListener('pointerup', touchEnd);
+stageEl.addEventListener('pointercancel', touchEnd);
+addEventListener('resize', refreshStage);
+addEventListener('orientationchange', refreshStage);
 
 /* ---------- teclado para digitar o nome ---------- */
 const kpGrid = $('#kpGrid');
@@ -364,7 +439,7 @@ function applyCfg() {
   document.documentElement.style.setProperty('--op', cfg.op);
   $('#cDrag').checked = cfg.drag; $('#cHap').checked = cfg.haptic; $('#cSwap').checked = cfg.swap;
   $('#cScale').value = cfg.scale; $('#cOp').value = cfg.op;
-  if (!cfg.drag && dragId !== null) { dragId = null; for (const k of ['left', 'right', 'up', 'down']) release(k, 'drag'); }
+  if (!cfg.drag && flyId !== null) { flyId = null; touchTarget = null; for (const k of ['left', 'right', 'up', 'down']) holdDir(k, false); }
 }
 const on = (id, ev, fn) => $(id).addEventListener(ev, fn);
 on('#cDrag', 'change', e => { cfg.drag = e.target.checked; saveCfg(); applyCfg(); });
@@ -396,9 +471,10 @@ function startPlayer() {
   playerEl = ruffle.createPlayer();
   host.appendChild(playerEl);
   try {
+    shipX = 150; shipY = 255; touchTarget = null;
     const p = playerEl.load({
       url: 'raidenx.swf', autoplay: 'on', unmuteOverlay: 'hidden', splashScreen: false,
-      letterbox: 'on', contextMenu: 'off', warnOnUnsupportedContent: false, scale: 'showAll',
+      letterbox: 'off', contextMenu: 'off', warnOnUnsupportedContent: false, scale: 'exactFit',
       backgroundColor: '#000000', quality: 'high', openUrlMode: 'deny', logLevel: 'error'
     });
     if (p && p.catch) p.catch(err => toast('Erro ao carregar o jogo: ' + err));

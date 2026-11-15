@@ -1,5 +1,5 @@
 // Aumente a versão ao atualizar qualquer arquivo do jogo.
-const V = 'raidenx-v1';
+const V = 'raidenx-v2';
 const CORE = ['./', 'index.html', 'manifest.webmanifest', 'raidenx.swf', 'raidenx.jpg',
               'icon-192.png', 'icon-512.png', 'ruffle/ruffle.js'];
 
